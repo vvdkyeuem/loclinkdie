@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIỂM TRA - LỌC CHUỖI</title>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, rgba(63, 94, 251, 0.8), rgba(252, 70, 107, 0.8));
+            background-size: cover;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            min-height: 100vh; /* Allow content to grow beyond 100vh */
+            overflow: auto; /* Enable scrolling */
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 30px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .input-section,
+        .output-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            resize: none;
+            outline: none;
+            color: #333;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        textarea:focus {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(63, 94, 251, 0.4);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #3f51b5, #2196f3);
+            color: #ffffff;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #2196f3, #3f51b5);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px);
+        }
+
+        #loader {
+            text-align: center;
+            color: #ffffff;
+            font-size: 16px;
+            font-style: italic;
+            display: none;
+        }
+
+        .icon {
+            font-size: 20px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>✨ KIỂM TRA - LỌC CHUỖI ✨</h1>
+
+        <!-- Input Section -->
+        <div class="input-section card">
+            <h2 style="color: #ffffff;">🔗 Nhập chuỗi</h2>
+            <textarea id="input" placeholder="Paste your URLs here, one per line"></textarea>
+        </div>
+
+        <!-- Output Section -->
+        <div class="output-section">
+            <div class="card">
+                <h2 style="color: #ffffff;">✅ Còn sống</h2>
+                <textarea id="output" readonly placeholder="Valid links will appear here"></textarea>
+            </div>
+            <div class="card">
+                <h2 style="color: #ffffff;">❌ Đã chết</h2>
+                <textarea id="rush" readonly placeholder="Invalid links will appear here"></textarea>
+            </div>
+        </div>
+
+        <!-- Button Section -->
+        <div class="button-group">
+            <button id="validate-button">
+                <span class="icon">🛠️</span>Validate
+            </button>
+            <button onclick="copyOutput()">
+                <span class="icon">📋</span>Copy Valid Links
+            </button>
+        </div>
+
+        <p id="loader">⏳ Checking links... Please wait!</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        async function processImageLinks() {
+            const inputContent = document.getElementById('input').value;
+            const urls = inputContent.split('\n').filter(Boolean);
+            const outputContent = [];
+            const errorContent = [];
+
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block'; // Show loader
+
+            try {
+                await Promise.all(urls.map(async url => {
+                    try {
+                        const { headers } = await axios.head(url, { timeout: 5000 });
+                        const sizeInKB = parseFloat((parseInt(headers['content-length'], 10) / 1024).toFixed(2)) || 0;
+
+                        if (sizeInKB > 0.49) {
+                            outputContent.push(url);
+                        } else {
+                            errorContent.push(url);
+                        }
+                    } catch {
+                        errorContent.push(url);
+                    }
+                }));
+            } finally {
+                loader.style.display = 'none'; // Hide loader after completion
+            }
+
+            document.getElementById('output').value = outputContent.join('\n');
+            document.getElementById('rush').value = errorContent.join('\n');
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('output');
+            output.select();
+            document.execCommand('copy');
+        }
+
+        document.getElementById('validate-button').addEventListener('click', processImageLinks);
+    </script>
+
+</body>
+</html>
